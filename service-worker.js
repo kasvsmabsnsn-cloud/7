@@ -7,8 +7,8 @@ const ASSETS_TO_CACHE = [
   './fatwa.html',
   './offline.html',
   './manifest.json',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
+  './icon-192.png',
+  './icon-512.png',
   'https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap',
   'https://cdn.tailwindcss.com',
   'https://unpkg.com/lucide@latest',
@@ -17,6 +17,7 @@ const ASSETS_TO_CACHE = [
   'https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js',
   'https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js'
 ];
+
 
 // Install Service Worker
 self.addEventListener('install', (event) => {
