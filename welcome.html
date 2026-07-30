@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="نموذج مسلم">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>نموذج مسلم - الصفحة الترحيبية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* ===== نفس الأنماط الأصلية مع إضافة تأثير التلاشي للـ body ===== */
+        :root {
+            --bg-color: #151B2B;
+            --text-color: #f8fafc;
+            --header-bg: rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden; 
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            opacity: 1;
+            transition: opacity 0.5s ease-in-out; /* تأثير التلاشي السلس */
+        }
+
+        /* كلاس التلاشي الفعلي عند المغادرة */
+        body.fade-out {
+            opacity: 0;
+        }
+
+        header {
+            background: var(--header-bg) !important;
+            backdrop-filter: blur(12px) saturate(180%) !important;
+            -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+
+        .header-glow-text {
+            font-family: 'Tajawal', sans-serif;
+            font-weight: 900;
+            color: #ffffff !important;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .hero-bg {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem 1.5rem;
+            position: relative;
+        }
+
+        .hero-bg .icon-large {
+            width: 120px;
+            height: 120px;
+            color: rgba(255,255,255,0.08);
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-bg h1 {
+            font-size: clamp(2.2rem, 6vw, 4rem);
+            font-weight: 900;
+            color: white;
+            line-height: 1.2;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero-bg h1 span {
+            color: #3B82F6;
+        }
+
+        .hero-bg .subtitle {
+            font-size: clamp(1rem, 2vw, 1.25rem);
+            color: #94a3b8;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            margin-bottom: 2.5rem;
+        }
+
+        .btn-hero {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 16px 40px;
+            border-radius: 60px;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            min-width: 220px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+
+        .btn-primary {
+            background: #3B82F6;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #2563EB;
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(59,130,246,0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.15);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+        }
+
+        .btn-hero i {
+            font-size: 1.3rem;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1.2rem;
+            margin-top: 0.5rem;
+        }
+
+        .install-badge {
+            display: inline-block;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.20);
+            border-radius: 100px;
+            padding: 6px 20px;
+            font-size: 0.85rem;
+            color: #6ee7b7;
+            font-weight: 500;
+            backdrop-filter: blur(6px);
+            margin-top: 1.5rem;
+        }
+        .install-badge i {
+            margin-left: 8px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 1rem 0 1.5rem;
+            color: #475569;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+
+        /* ===== شاشة التحميل الافتراضية عند البدء ===== */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #0f172a;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.6s ease;
+            font-family: 'Tajawal', sans-serif;
+        }
+        #splash-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .splash-logo {
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: #ffffff;
+            text-shadow: 0 0 30px rgba(59, 130, 246, 0.2);
+        }
+        .splash-logo span { color: #60A5FA; }
+        .splash-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.05);
+            border-top-color: #3B82F6;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-top: 2rem;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ===== تحسينات للشاشات الصغيرة ===== */
+        @media (max-width: 640px) {
+            .btn-hero {
+                width: 100%;
+                max-width: 320px;
+                padding: 14px 20px;
+                font-size: 1rem;
+            }
+            .actions {
+                flex-direction: column;
+                align-items: center;
+                width: 100%;
+            }
+            .hero-bg h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== شاشة تحميل سريعة للبدء ===== -->
+    <div id="splash-screen">
+        <div class="splash-logo">نموذج <span>مسلم</span></div>
+        <div class="splash-spinner"></div>
+    </div>
+
+    <!-- ===== الرأس ===== -->
+    <header class="fixed top-0 w-full z-50 px-4 md:px-20">
+        <div class="fixed top-0 left-0 w-full z-50 px-8 py-4 flex justify-between items-center h-24 bg-[#1e1f20]/90 backdrop-blur-2xl border-b border-white/5 rounded-b-[32px]">
+            <div class="flex-1 flex justify-start">
+                <button class="p-3 hover:bg-white/5 rounded-2xl transition-all outline-none">
+                    <div class="flex flex-col gap-1 w-7">
+                        <span class="h-1.5 w-full bg-[#FFFFFF] rounded-full block"></span>
+                        <span class="h-1.5 w-full bg-[#FFFFFF] rounded-full block"></span>
+                        <span class="h-1.5 w-full bg-[#FFFFFF] rounded-full block"></span>
+                    </div>
+                </button>
+            </div>
+            <div class="flex-1 flex justify-center">
+                <h1 class="header-glow-text text-2xl md:text-5xl tracking-tighter uppercase">مسلم</h1>
+            </div>
+            <div class="flex-1 flex justify-end">
+                <div class="text-white"><i data-lucide="terminal" class="w-10 h-10" style="stroke-width: 3px;"></i></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===== المحتوى الرئيسي ===== -->
+    <main class="flex-1 flex items-center justify-center pt-24 pb-8">
+        <div class="hero-bg">
+            <i data-lucide="message-square" class="icon-large text-blue-500/30"></i>
+
+            <h1>مرحباً بك في <span>{ نموذج مسلم }</span></h1>
+            <p class="subtitle">فتاوى شرعية موثوقة • تعمل بالذكاء الاصطناعي</p>
+
+            <div class="actions">
+                <button id="installBtn" class="btn-hero btn-primary">
+                    <i data-lucide="download"></i>
+                    <span id="installBtnText">تثبيت التطبيق</span>
+                </button>
+                <a href="index.html" id="browserLink" class="btn-hero btn-secondary">
+                    <i data-lucide="globe"></i>
+                    استخدام من المتصفح
+                </a>
+            </div>
+
+            <div id="installStatus" class="install-badge" style="display: none;">
+                <i data-lucide="check-circle"></i>
+                <span>التطبيق مثبّت بالفعل</span>
+            </div>
+
+            <p class="text-slate-500 text-sm mt-8 max-w-md">
+                تطبيق ذكي يعتمد على قاعدة بيانات الفتاوى السلفية، يقدم إجابات دقيقة وسريعة.
+            </p>
+        </div>
+    </main>
+
+    <!-- ===== التذييل ===== -->
+    <footer>
+        <p>نموذج مسلم © 2026 • جميع الحقوق محفوظة</p>
+    </footer>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ============================================================
+            //  دالة التلاشي السلس والانتقال للصفحة الجديدة
+            // ============================================================
+            function fadeOutAndNavigate(targetUrl) {
+                // تفعيل كلاس التلاشي على الـ body بالكامل
+                document.body.classList.add('fade-out');
+                // الانتظار حتى تنتهي مدة التلاشي (500 ملي ثانية مطابقة للـ CSS) ثم الانتقال
+                setTimeout(() => {
+                    window.location.href = targetUrl;
+                }, 500);
+            }
+
+            // ربط زر المتصفح بالتلاشي
+            const browserLink = document.getElementById('browserLink');
+            if (browserLink) {
+                browserLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    fadeOutAndNavigate('index.html');
+                });
+            }
+
+            // ============================================================
+            //  1. إخفاء شاشة التحميل الأولية بعد 1.5 ثانية
+            // ============================================================
+            setTimeout(() => {
+                const splash = document.getElementById('splash-screen');
+                if (splash) splash.classList.add('hidden');
+            }, 1500);
+
+            // ============================================================
+            //  2. كشف وضع PWA (display-mode: standalone)
+            // ============================================================
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                window.navigator.standalone === true;
+
+            if (isStandalone) {
+                fadeOutAndNavigate('index.html');
+                return;
+            }
+
+            // ============================================================
+            //  3. تهيئة أيقونات Lucide
+            // ============================================================
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+
+            // ============================================================
+            //  4. زر التثبيت (beforeinstallprompt)
+            // ============================================================
+            let deferredPrompt = null;
+            const installBtn = document.getElementById('installBtn');
+            const installBtnText = document.getElementById('installBtnText');
+            const installStatus = document.getElementById('installStatus');
+
+            function checkIfInstalled() {
+                const isInstalled = window.matchMedia('(display-mode: standalone)').matches ||
+                    window.navigator.standalone === true;
+                if (isInstalled) {
+                    installBtnText.textContent = 'فتح التطبيق';
+                    installBtn.querySelector('i').className = 'lucide lucide-arrow-right';
+                    installBtn.onclick = function(e) {
+                        e.preventDefault();
+                        fadeOutAndNavigate('index.html');
+                    };
+                    installStatus.style.display = 'inline-block';
+                    installStatus.querySelector('span').textContent = 'التطبيق مثبّت بالفعل';
+                    return true;
+                }
+                return false;
+            }
+
+            const alreadyInstalled = checkIfInstalled();
+
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                if (!alreadyInstalled) {
+                    installBtn.style.display = 'inline-flex';
+                    installBtnText.textContent = 'تثبيت التطبيق';
+                    installBtn.querySelector('i').className = 'lucide lucide-download';
+                    installStatus.style.display = 'none';
+                }
+            });
+
+            window.addEventListener('appinstalled', () => {
+                deferredPrompt = null;
+                installBtnText.textContent = 'فتح التطبيق';
+                installBtn.querySelector('i').className = 'lucide lucide-arrow-right';
+                installBtn.onclick = function(e) {
+                    e.preventDefault();
+                    fadeOutAndNavigate('index.html');
+                };
+                installStatus.style.display = 'inline-block';
+                installStatus.querySelector('span').textContent = 'تم التثبيت بنجاح!';
+            });
+
+            installBtn.addEventListener('click', async (e) => {
+                if (installBtnText.textContent === 'فتح التطبيق') {
+                    fadeOutAndNavigate('index.html');
+                    return;
+                }
+
+                if (deferredPrompt) {
+                    try {
+                        const result = await deferredPrompt.prompt();
+                        deferredPrompt = null;
+                        if (result.outcome === 'accepted') {
+                            installBtnText.textContent = 'فتح التطبيق';
+                            installBtn.querySelector('i').className = 'lucide lucide-arrow-right';
+                            installBtn.onclick = function() {
+                                fadeOutAndNavigate('index.html');
+                            };
+                            installStatus.style.display = 'inline-block';
+                            installStatus.querySelector('span').textContent = 'تم التثبيت بنجاح!';
+                        } else {
+                            installStatus.style.display = 'inline-block';
+                            installStatus.querySelector('span').textContent = 'تم إلغاء التثبيت';
+                            setTimeout(() => {
+                                installStatus.style.display = 'none';
+                            }, 3000);
+                        }
+                    } catch (err) {
+                        console.warn('Install prompt error:', err);
+                    }
+                } else {
+                    if (navigator.userAgent.includes('Android') || navigator.userAgent.includes('iPhone')) {
+                        installStatus.style.display = 'inline-block';
+                        installStatus.querySelector('span').textContent =
+                            'اضغط "إضافة إلى الشاشة الرئيسية" من قائمة المتصفح';
+                        setTimeout(() => {
+                            installStatus.style.display = 'none';
+                        }, 5000);
+                    } else {
+                        fadeOutAndNavigate('index.html');
+                    }
+                }
+            });
+
+            setTimeout(() => {
+                if (!alreadyInstalled) {
+                    const isInstalledNow = window.matchMedia('(display-mode: standalone)').matches ||
+                        window.navigator.standalone === true;
+                    if (isInstalledNow) {
+                        installBtnText.textContent = 'فتح التطبيق';
+                        installBtn.querySelector('i').className = 'lucide lucide-arrow-right';
+                        installBtn.onclick = function() {
+                            fadeOutAndNavigate('index.html');
+                        };
+                        installStatus.style.display = 'inline-block';
+                        installStatus.querySelector('span').textContent = 'التطبيق مثبّت';
+                    }
+                }
+            }, 2000);
+
+            console.log('🚀 صفحة 'الترحيب' جاهزة بتأثير التلاشي');
+        })();
+    </script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .catch(err => console.log('SW registration failed:', err));
+            });
+        }
+    </script>
+</body>
+
+</html>

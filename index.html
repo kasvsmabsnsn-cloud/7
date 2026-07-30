@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="نموذج مسلم">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>نموذج مسلم - فتاوى شرعية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+   
+
+    <meta name="title" content="نموذج مسلم للرد على الفتاوى">
+    <meta name="description" content="نموذج ذكاء اصطناعي متطور للإجابة على الفتاوى والمسائل الشرعية بشكل آلي مستمد حصراً من المراجع السلفية الموثوقة.">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="نموذج مسلم للرد على الفتاوى">
+    <meta property="og:description" content="نموذج ذكاء اصطناعي متطور للإجابة على الفتاوى والمسائل الشرعية بشكل آلي مستمد حصراً من المراجع السلفية الموثوقة.">
+    <meta property="og:site_name" content="نموذج مسلم">
+
+    <style>
+        /* ===== صفحة التحميل (Splash Screen) - تصميم جذاب ===== */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #0f172a;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.6s ease;
+            font-family: 'Tajawal', sans-serif;
+        }
+        #splash-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .splash-logo {
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: #ffffff;
+            text-shadow: 0 0 30px rgba(59, 130, 246, 0.2);
+        }
+        .splash-logo span { color: #60A5FA; }
+        .splash-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.05);
+            border-top-color: #3B82F6;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-top: 2rem;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ===== تحسينات للشاشات الصغيرة ===== */
+        @media (max-width: 640px) {
+            .btn-hero {
+                width: 100%;
+                max-width: 320px;
+                padding: 14px 20px;
+                font-size: 1rem;
+            }
+            .actions {
+                flex-direction: column;
+                align-items: center;
+                width: 100%;
+            }
+            .hero-bg h1 { font-size: 2rem; }
+        }
+
+        /* ===== باقي التصميم ===== */
+        :root {
+            --bg-color: #151B2B;
+            --text-color: #f8fafc;
+            --header-bg: rgba(0, 0, 0, 0.3);
+        }
+
+        header {
+            background: var(--header-bg) !important;
+            backdrop-filter: blur(12px) saturate(180%) !important;
+            -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+
+        .prose {
+            color: #cbd5e1 !important;
+            line-height: 1.8 !important;
+        }
+        #dropdown-menu {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(20px) brightness(0.8);
+        }
+
+        .prose h1, .prose h2, .prose h3, .prose h4 {
+            color: #ffffff !important;
+            font-weight: 900 !important;
+            margin-top: 1.5rem !important;
+            margin-bottom: 0.75rem !important;
+            letter-spacing: -0.02em;
+            display: block;
+        }
+
+        .prose h1 { font-size: 1.8rem !important; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; }
+        .prose h2 { font-size: 1.5rem !important; }
+        .prose h3 { font-size: 1.3rem !important; }
+        .prose ul li, .prose ol li { margin-bottom: 0.5rem; position: relative; }
+        .prose strong { color: #ffffff !important; font-weight: 700; }
+
+        .prose blockquote {
+            border-right: 4px solid #3B82F6 !important;
+            border-left: none !important;
+            padding-right: 1rem !important;
+            font-style: italic;
+            background: rgba(59, 130, 246, 0.05);
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+
+        .header-glow-text {
+            font-family: 'Tajawal', sans-serif;
+            font-weight: 900;
+            color: #ffffff !important;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .menu-transition { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .menu-hidden { opacity: 0; transform: translateY(20px) scale(0.95); pointer-events: none; }
+        .menu-visible { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+
+        body { 
+            font-family: 'Tajawal', sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-color);
+            transition: background-color 0.5s ease, color 0.5s ease;
+            overflow: hidden; 
+        }
+
+        .hero-bg {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: -1;
+            text-align: center;
+            width: 100%;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .animate-in { scroll-margin-top: 100px; }
+
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+
+        /* ===== تعديلات العرض الكامل ===== */
+/* ===== تعديلات العرض الكامل وإزاحة أول سؤال لأسفل ===== */
+.messages-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    /* زيادة المسافة العلوية من 6rem إلى 8.5rem لضمان نزول أول سؤال للأسفل بمسافة سنتيمترات كافية وجذابة */
+    padding: 8.5rem 0 10rem 0 !important;
+}
+
+.messages-container > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 16px !important;
+    margin: 0 !important;
+}
+
+/* إضافة هامش علوي إضافي لأول عنصر سؤال يظهر في المحادثة لضمان التباعد المثالي */
+.messages-container > div > div:first-child {
+    margin-top: 1.5rem !important;
+}
+
+
+        .ai-card {
+            background-color: var(--bg-color); 
+            backdrop-filter: blur(25px) saturate(150%) !important;
+            -webkit-backdrop-filter: blur(25px) saturate(150%);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            transition: all 0.4s ease;
+            width: 100% !important;
+            max-width: 100% !important;
+            border-radius: 16px !important;
+            padding: 24px 20px !important;
+            margin: 0 0 20px 0 !important;
+            box-sizing: border-box !important;
+        }
+
+        .status-text-glow {
+            font-weight: 900;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .status-circle {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.2);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .circle-verified {
+            background: #10B981;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.6);
+        }
+
+        /* تنسيق الفتوى المنسقة (JSON) */
+        .fatwa-container {
+            direction: rtl;
+            text-align: right;
+            color: #e2e8f0;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        .fatwa-container .section {
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            border-radius: 16px;
+            background: rgba(255,255,255,0.02);
+            transition: all 0.3s;
+            width: 100%;
+        }
+        .fatwa-container .section:hover {
+            background: rgba(255,255,255,0.04);
+        }
+        .fatwa-container .section h3 {
+            font-size: 1.5rem !important;
+            font-weight: 900 !important;
+            color: #60A5FA !important;
+            margin-bottom: 8px !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            border-bottom: 2px solid rgba(96, 165, 250, 0.15) !important;
+            padding-bottom: 4px !important;
+        }
+        .fatwa-container .section li {
+            font-size: 1.05rem !important;
+            line-height: 1.9 !important;
+            color: #e2e8f0 !important;
+            margin-bottom: 4px !important;
+            list-style: disc !important;
+            padding-right: 8px !important;
+        }
+        .fatwa-container .section p {
+            color: #e2e8f0;
+            line-height: 1.9;
+            font-size: 1.05rem !important;
+        }
+        .fatwa-container .final-phrase {
+            text-align: center;
+            font-weight: 700;
+            color: #94a3b8;
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        .fatwa-container .category-badge {
+            display: inline-block;
+            background: rgba(59, 130, 246, 0.2);
+            color: #93C5FD;
+            padding: 4px 16px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            margin-top: 8px;
+        }
+        .fatwa-container h2 {
+            font-size: 2rem !important;
+            font-weight: 900 !important;
+            color: #60A5FA !important;
+            border-bottom: 2px solid rgba(96, 165, 250, 0.2) !important;
+            padding-bottom: 8px !important;
+            margin-bottom: 20px !important;
+        }
+
+        /* مودال الإبلاغ عن مشكلة والبحث الجديد بتصميم الكونسول الرائع */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(12px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: #1e293b;
+            border-radius: 32px;
+            padding: 32px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        /* تصميم واجهة البحث المستوحى من الكونسول بنظام الشبكة ومنع التراكب */
+     
+        .preview-fatwa-card {
+            background: rgba(255,255,255,0.03);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.06);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            display: flex;
+            flex-direction: column;
+            height: auto !important;
+        }
+        .preview-fatwa-card:hover {
+            background: rgba(255,255,255,0.07);
+            border-color: rgba(59,130,246,0.3);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+        }
+        .preview-color-bar {
+            height: 6px;
+            width: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899, #3b82f6);
+            background-size: 300% 100%;
+            animation: colorMove 4s linear infinite;
+        }
+        @keyframes colorMove {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 300% 0%; }
+        }
+        .preview-card-body {
+            padding: 20px;
+            flex: 1;
+        }
+        .preview-card-body h3 {
+            color: #f1f5f9;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        .preview-card-body .preview-text {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            line-height: 1.7;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .preview-card-body .full-text {
+            color: #cbd5e1;
+            font-size: 0.95rem;
+            line-height: 1.8;
+            margin-top: 12px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding-top: 12px;
+            display: none;
+        }
+        .preview-card-body .full-text.expanded {
+            display: block;
+        }
+        .preview-expand-btn {
+            background: rgba(59,130,246,0.15);
+            color: #93c5fd;
+            border: none;
+            padding: 6px 18px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-top: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: fit-content;
+        }
+        .preview-expand-btn:hover {
+            background: rgba(59,130,246,0.3);
+        }
+
+        .messages-container {
+            scroll-behavior: smooth;
+        }
+        
+        .
+        /* أزرار التحكم في الفتوى */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .action-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #94a3b8;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Tajawal', sans-serif;
+        }
+        .action-btn:hover {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: #3b82f6;
+            color: #93c5fd;
+        }
+        .action-btn i {
+            width: 16px;
+            height: 16px;
+        }
+
+        footer .max-w-3xl {
+            max-width: 100% !important;
+            width: 100% !important;
+            padding: 0 12px !important;
+        }
+        
+        .loading-fade {
+            transition: opacity 0.3s ease-in-out;
+            opacity: 1;
+        }
+        
+        .loading-fade.fade-out {
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- ===== صفحة التحميل (Splash Screen) ===== -->
+    <div id="splash-screen">
+        <div class="splash-logo">نموذج <span>مسلم</span></div>
+        <div class="splash-spinner"></div>
+    
+
+    </div>
+
+    <div id="root"></div>
+
+    <!-- مودال الإبلاغ عن مشكلة -->
+    <div id="reportModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-black text-white">الإبلاغ عن مشكلة</h2>
+                <button onclick="closeReportModal()" class="text-white/50 hover:text-white">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <textarea id="reportText" rows="5" placeholder="يرجى وصف المشكلة بالتفصيل..." class="w-full bg-black/30 border border-white/10 rounded-2xl p-4 text-white placeholder-white/50 resize-none"></textarea>
+            <div class="flex gap-3 mt-6">
+                <button onclick="submitReport()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-2xl transition-all">إرسال</button>
+                <button onclick="closeReportModal()" class="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-2xl transition-all">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال البحث في قواعد البيانات (بتصميم الكونسول والشبكة المنظمة) -->
+
+    <!-- مودال التقييم الحقيقي -->
+    <div id="ratingModal" class="modal-overlay">
+        <div class="modal-content text-center">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-black text-white">تقييم الفتوى</h2>
+                <button onclick="closeRatingModal()" class="text-white/50 hover:text-white">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <p class="text-slate-300 mb-6">ما مدى فائدة هذه الفتوى؟ اختر عدد النجوم:</p>
+            <div class="flex justify-center gap-3 mb-6" id="star-rating-container">
+                <button onclick="submitRating(1)" class="text-3xl hover:scale-125 transition-transform">⭐</button>
+                <button onclick="submitRating(2)" class="text-3xl hover:scale-125 transition-transform">⭐</button>
+                <button onclick="submitRating(3)" class="text-3xl hover:scale-125 transition-transform">⭐</button>
+                <button onclick="submitRating(4)" class="text-3xl hover:scale-125 transition-transform">⭐</button>
+                <button onclick="submitRating(5)" class="text-3xl hover:scale-125 transition-transform">⭐</button>
+            </div>
+            <div id="rating-stats" class="bg-white/5 p-4 rounded-2xl text-slate-300">
+                <div class="text-lg font-bold text-blue-400 mb-1" id="rating-average">التقييم: -- / 5</div>
+                <div class="text-xs text-slate-400" id="rating-count">(0 تقييمات)</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== تعريف الدوال العامة ====================
+        window.openReportModal = function(question = null) {
+            const modal = document.getElementById('reportModal');
+            const textarea = document.getElementById('reportText');
+            if (modal && textarea) {
+                textarea.value = question ? `السؤال: ${question}\n\nالمشكلة: ` : '';
+                modal.classList.add('active');
+            }
+        };
+
+        window.closeReportModal = function() {
+            const modal = document.getElementById('reportModal');
+            if (modal) {
+                modal.classList.remove('active');
+                document.getElementById('reportText').value = '';
+            }
+        };
+
+        window.submitReport = async function() {
+            const problem = document.getElementById('reportText').value;
+            if (!problem.trim()) {
+                showNotification("يرجى كتابة المشكلة", "error");
+                return;
+            }
+            await sendReportNotification(problem);
+            showNotification("تم إرسال البلاغ بنجاح، شكراً لك!");
+            closeReportModal();
+        };
+
+     
+
+        // ==================== شاشة التحميل (Splash Screen) الناعمة ====================
+// إخفاء شاشة التحميل بعد مدة قصيرة (مثلاً 1.5 ثانية أو ثانية واحدة)
+setTimeout(() => {
+    const splash = document.getElementById('splash-screen');
+    if (splash) {
+        splash.classList.add('hidden'); // أو إضافة كلاس التلاشي إذا كنت تستخدمه
+    }
+}, 1500);
+
+
+        // ==================== Firebase Configuration ====================
+        const firebaseConfig = {
+            apiKey: "AIzaSyC4n627jxgPjoQn7icO9OP9C3ImcAbLEME",
+            authDomain: "private-d338e.firebaseapp.com",
+            databaseURL: "https://private-d338e-default-rtdb.firebaseio.com",
+            projectId: "private-d338e",
+            storageBucket: "private-d338e.firebasestorage.app",
+            messagingSenderId: "514393440915",
+            appId: "1:514393440915:web:b72e886e866f45ab948366",
+            measurementId: "G-Z8RT3VY8SL"
+        };
+        
+        if (!firebase.apps || !firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
+
+        // ==================== Telegram Bot Configuration ====================
+        const TELEGRAM_BOT_TOKEN = "8001439036:AAFAVndQ0GlWuz0djflhyPYo5Jo17oMLAHo";
+        const TELEGRAM_CHAT_ID = "6068331455";
+
+        // ==================== مفاتيح Gemini المحملة ديناميكياً من Firebase (المطلوب الأول والثاني والثالث والسابع والثامن والتاسع والعاشر) ====================
+        let dynamicApiKeys = [];
+        let currentKeyIndex = 0;
+
+        function loadApiKeysFromFirebase() {
+            db.ref('api_keys').on('value', (snapshot) => {
+                dynamicApiKeys = [];
+                if (snapshot.exists()) {
+                    snapshot.forEach((childSnapshot) => {
+                        const keyData = childSnapshot.val();
+                        if (keyData && keyData.enabled === true && keyData.key) {
+                            dynamicApiKeys.push({
+                                firebaseId: childSnapshot.key,
+                                key: keyData.key,
+                                requestsCount: keyData.requestsCount || 0
+                            });
+                        }
+                    });
+                }
+                if (currentKeyIndex >= dynamicApiKeys.length) {
+                    currentKeyIndex = 0;
+                }
+            });
+        }
+        loadApiKeysFromFirebase();
+
+        // رسائل التحميل المتغيرة داخل الشات
+        let loadingMessageInterval = null;
+        const loadingMessagesList = [
+            "📚 جاري استرجاع الفتاوى ...",
+            "🧠 جاري تحليل السؤال...",
+            "📖 جاري مراجعة الأدلة ...",
+            "✍️ جاري صياغة الفتوى...",
+            "جاري التحقق من الصحة ✅️" 
+        ];
+        let currentMsgIndex = 0;
+
+        function startDynamicLoadingMessages() {
+            const loadingTextEl = document.getElementById('dynamic-loading-text');
+            if (!loadingTextEl) return;
+            currentMsgIndex = 0;
+            loadingTextEl.textContent = loadingMessagesList[currentMsgIndex];
+            loadingTextEl.classList.remove('fade-out');
+            if (loadingMessageInterval) clearInterval(loadingMessageInterval);
+            loadingMessageInterval = setInterval(() => {
+                loadingTextEl.classList.add('fade-out');
+                setTimeout(() => {
+                    currentMsgIndex = (currentMsgIndex + 1) % loadingMessagesList.length;
+                    loadingTextEl.textContent = loadingMessagesList[currentMsgIndex];
+                    loadingTextEl.classList.remove('fade-out');
+                }, 300);
+            }, 1800);
+        }
+
+        function stopDynamicLoadingMessages() {
+            if (loadingMessageInterval) {
+                clearInterval(loadingMessageInterval);
+                loadingMessageInterval = null;
+            }
+        }
+
+        // ==================== SYSTEM_STRICT_INSTRUCTION ====================
+        const SYSTEM_STRICT_INSTRUCTION = `
+[تنبيه واستثناء هام جداً]:
+إذا كان سؤال المستخدم ليس استفساراً فقهياً أو شرعياً (مثل: عمليات حسابية بسيطة، أسئلة برمجية، تحيات، أو أسئلة عامة):
+- أجب فقط بشكل مباشر، محدد، ومختصر جداً في سطر أو سطرين.
+- لا تطبق هيكل الفتوى الشرعية.
+
+[في حال كان السؤال استفساراً فقهياً أو شرعياً حقيقياً، التزم حصراً بالهيكل التالي]:
+أنت عالم ومفتي إسلامي راسخ تتبع المنهج السلفي. يجب عليك صياغة الإجابة بدقة بالغة وبناءً على الهيكل الصارم التالي حصراً، مع استخدام عناوين رئيسية واضحة وبخط عريض ونقاط تفصيلية تحته:
+
+[عنوان المسألة بخط عريض كبير]
+
+■ أولاً: الأدلة من الكتاب والسنة:
+- ذكر الآيات القرآنية الكريمة المتعلقة بالمسألة بدقة.
+- ذكر الأحاديث النبوية الصحيحة من كتب السنة.
+
+■ ثانياً: أقوال الصحابة رضي الله عنهم:
+- سرد الآثار الواردة عن الصحابة في هذا الباب.
+
+■ ثالثاً: مجمل أقوال العلماء:
+- بيان مجمل آراء العلماء في المسألة.
+
+■ رابعاً: أدلة كل قول:
+- ذكر أدلة كل فريق ومستند كل قول بالتفصيل.
+
+■ خامساً: تحقيقات شيخ الإسلام ابن تيمية:
+- ذكر ما يخص المسألة من تحقيقات ونقولات عن شيخ الإسلام ابن تيمية رحمه الله.
+
+■ سادساً: فصل الترجيح وسبب الترجيح:
+- بيان القول الراجح في المسألة مع ذكر سبب الترجيح وقوة الدليل.
+
+■ سابعاً: فصل الرد على الشبهات:
+- الرد العلمي على الشبهات أو الأقوال المرجوحة المخالفة للحق.
+
+■ ثامناً: مستويات الشرح والتفصيل:
+1. الشرح المفصل (تفكيك المسألة فقهياً).
+2. الشرح المختصر (إيجاز غير مخل).
+
+■ تاسعاً: خلاصة الحكم الشرعي النهائي:
+- النتيجة الفقهية المستخلصة بوضوح.
+
+■ عاشراً: التحذيرات والتوجيهات:
+- التحذير الصارم من المشابهة أو الخلط أو اللبس في هذه المسألة، وبيان الأوجه الفاسدة للقياس أو الممارسات الخاطئة المرتبطة بها.
+
+وفي ختام الإجابة تماماً، يجب أن تكتب في سطر مستقل وبشكل واضح: "والله تعالى أعلم".
+`;
+
+        // ==================== App State ====================
+        let state = {
+            messages: [],
+            input: "",
+            loading: false,
+            isMenuOpen: false,
+            isHeroProminent: true,
+            typingResponse: "",
+            isListening: false,
+            autoScrollEnabled: true
+        };
+
+        let typeInterval = null;
+        let cachedFatwasMemory = []; // ذاكرة محلية للبحث السريع عبر Fuse.js
+
+        // ==================== Helper Functions ====================
+        function safeMarkdownParse(text) {
+            if (!text) return "";
+            try {
+                if (typeof marked !== 'undefined' && marked.parse) {
+                    return marked.parse(text);
+                }
+                return text;
+            } catch (error) {
+                return text;
+            }
+        }
+
+        function formatAIContent(text) {
+            return `<div class="prose dark:prose-invert max-w-none shadow-sm">${safeMarkdownParse(text || "")}</div>`;
+        }
+
+        function copyToClipboard(text) {
+            if (!text) return;
+            navigator.clipboard.writeText(text).then(() => {
+                showNotification("✅ تم نسخ الإجابة بنجاح!");
+            }).catch(() => {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showNotification("✅ تم نسخ الإجابة بنجاح!");
+            });
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `fixed bottom-24 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full text-white font-bold z-50 animate-in fade-in slide-in-from-bottom-5 ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ==================== Scroll Management ====================
+        let isUserScrolling = false;
+        let scrollTimeout;
+
+        function setupScrollHandling() {
+            const messagesContainer = document.querySelector('.messages-container');
+            if (!messagesContainer) return;
+            messagesContainer.addEventListener('scroll', () => {
+                isUserScrolling = true;
+                state.autoScrollEnabled = false;
+                clearTimeout(scrollTimeout);
+                scrollTimeout = setTimeout(() => {
+                    isUserScrolling = false;
+                    const isNearBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight < 100;
+                    if (isNearBottom) state.autoScrollEnabled = true;
+                }, 150);
+            });
+        }
+
+        function scrollToBottom(force = false) {
+            if (!state.autoScrollEnabled && !force) return;
+            const messagesContainer = document.querySelector('.messages-container');
+            if (messagesContainer) {
+                messagesContainer.scrollTo({ top: messagesContainer.scrollHeight, behavior: 'smooth' });
+            }
+        }
+
+        // ==================== Telegram Notifications ====================
+        async function sendTelegramNotification(message) {
+            try {
+                const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+                await fetch(url, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: message, parse_mode: 'HTML' })
+                });
+            } catch (error) {
+                console.error("Telegram error:", error);
+            }
+        }
+
+        async function notifyNewQuestion(question, fatwaId) {
+            const timestamp = new Date().toLocaleTimeString('ar-EG');
+            const message = `🔔 <b>سؤال جديد:</b>\n${question.substring(0, 200)}\n🆔 <b>الرقم:</b> <code>${fatwaId}</code>\n⏰ <b>الوقت:</b> ${timestamp}`;
+            await sendTelegramNotification(message);
+        }
+
+        async function sendReportNotification(problem) {
+            const message = `⚠️ <b>بلاغ جديد:</b>\n${problem}`;
+            await sendTelegramNotification(message);
+        }
+
+        // ==================== Typewriter Effect (سريع واحترافي حرفاً حرفاً) ====================
+        function startTypewriter(fullText, messageId) {
+            if (typeInterval) clearInterval(typeInterval);
+            state.typingResponse = "";
+            let idx = 0;
+            const speed = 4; // سرعة فائقة واحترافية
+
+            typeInterval = setInterval(() => {
+                if (idx <= fullText.length) {
+                    state.typingResponse = fullText.slice(0, idx);
+                    const msgDiv = document.querySelector(`.ai-card[data-message-id="${messageId}"]`);
+                    if (msgDiv) {
+                        const contentDiv = msgDiv.querySelector('.text-lg');
+                        if (contentDiv) contentDiv.innerHTML = formatAIContent(state.typingResponse);
+                    }
+                    const mObj = state.messages.find(m => m.id === messageId);
+                    if (mObj) mObj.text = state.typingResponse;
+                    scrollToBottom();
+                    idx += 3; // قفزة بعدة أحرف للسرعة والنعومة
+                } else {
+                    clearInterval(typeInterval);
+                    typeInterval = null;
+                    state.typingResponse = fullText;
+                    const mObj = state.messages.find(m => m.id === messageId);
+                    if (mObj) {
+                        mObj.text = fullText;
+                        mObj.isTyping = false;
+                        saveMessagesToLocal();
+                    }
+                    renderMessages();
+                }
+            }, speed);
+        }
+
+        // ==================== Save/Load History ====================
+        function saveMessagesToLocal() {
+            if (state.messages.length > 0) {
+                localStorage.setItem('selfie_ai_history', JSON.stringify(state.messages));
+            }
+        }
+
+        function loadMessagesFromLocal() {
+            const saved = localStorage.getItem('selfie_ai_history');
+            if (saved) {
+                try {
+                    state.messages = JSON.parse(saved);
+                    if (state.messages.length > 0) state.isHeroProminent = false;
+                    renderMessages();
+                } catch (e) {
+                    localStorage.removeItem('selfie_ai_history');
+                }
+            }
+        }
+
+        function clearHistory() {
+            if (window.confirm("هل تريد مسح سجل المحادثات؟")) {
+                localStorage.removeItem('selfie_ai_history');
+                state.messages = [];
+                state.isHeroProminent = true;
+                renderMessages();
+                renderHero();
+            }
+        }
+
+        function renderHero() {
+            const heroDiv = document.getElementById('hero-container');
+            if (heroDiv) {
+                heroDiv.style.display = (state.isHeroProminent && state.messages.length === 0) ? 'flex' : 'none';
+            }
+        }
+
+        // ==================== Render Elements ====================
+        function createUserMessageElement(text, messageId) {
+            const maxLength = 150;
+            const isLong = text.length > maxLength;
+            const displayText = text.slice(0, maxLength);
+            return `
+                <div class="flex flex-col gap-4 mb-12 animate-in fade-in slide-in-from-bottom-5 w-full" data-message-id="${messageId}">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-[#3B82F6] flex items-center justify-center text-white shrink-0 shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                            <i data-lucide="user" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-[#3B82F6] font-[900] text-xl tracking-widest">سؤالك:</span>
+                    </div>
+                    <div class="pr-12 relative">
+                        <h2 class="text-2xl font-black leading-tight text-white">${escapeHtml(displayText)}${isLong ? '...' : ''}</h2>
+                    </div>
+                </div>
+            `;
+        }
+
+        function createAIMessageElement(text, verified, isTyping, messageId) {
+            const contentHtml = isTyping ? formatAIContent(state.typingResponse || text) : formatAIContent(text || "");
+            return `
+                <div class="ai-card relative group" data-message-id="${messageId}">
+                    <div class="absolute -top-6 left-6 right-6 flex items-center justify-between z-20">
+                        <div class="flex flex-col items-start gap-1">
+                            <span class="status-text-glow text-[11px] px-2 py-0.5 rounded-md ${verified ? 'text-green-500' : 'text-yellow-500'}">
+                                ${verified ? "✓ إجابة معتمدة" : "⌛ إجابة ذكية سريعة"}
+                            </span>
+                            <div class="flex items-center gap-2 mr-1">
+                                <div class="status-circle bg-blue-500"><i data-lucide="cpu" class="w-3 h-3 text-white"></i></div>
+                                <div class="status-circle circle-verified"><i data-lucide="check" class="w-4 h-4 text-white font-bold"></i></div>
+                            </div>
+                        </div>
+                        <button onclick="window.copyMessage('${messageId}')" class="bg-[#3B82F6] hover:bg-blue-700 text-white px-5 py-2.5 rounded-full text-sm font-black shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center gap-2 transition-all">
+                            <i data-lucide="copy" class="w-4 h-4"></i> نسخ الإجابة
+                        </button>
+                    </div>
+                    <div class="text-lg font-medium leading-tight text-slate-200 mt-4">
+                        ${contentHtml}
+                    </div>
+                    <!-- الأزرار الثلاثة المحدثة -->
+                    <div class="mt-6 pt-4 border-t border-white/10 flex items-center justify-center gap-2">
+                        <button onclick="window.speakFatwaText('${messageId}')" class="flex flex-col items-center justify-center p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all w-20">
+                            <i data-lucide="volume-2" class="w-5 h-5 text-blue-400 mb-1"></i>
+                            <span class="text-[11px] font-bold text-slate-300">استماع</span>
+                        </button>
+                        <button onclick="window.shareFatwaWithRequiredText('${messageId}')" class="flex flex-col items-center justify-center p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all w-20">
+                            <i data-lucide="share-2" class="w-5 h-5 text-blue-400 mb-1"></i>
+                            <span class="text-[11px] font-bold text-slate-300">مشاركة</span>
+                        </button>
+                        <button onclick="window.openRatingModal('${messageId}')" class="flex flex-col items-center justify-center p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all w-20">
+                            <div class="flex text-yellow-400 text-xs mb-1">★★★★★</div>
+                            <span class="text-[11px] font-bold text-slate-300">التقييم</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderMessages() {
+            const container = document.getElementById('messages-container');
+            if (!container) return;
+            if (state.messages.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            let html = '<div class="w-full">';
+            state.messages.forEach((msg, idx) => {
+                const mId = msg.id || `msg_${idx}`;
+                if (msg.role === 'user') {
+                    html += createUserMessageElement(msg.text, mId);
+                } else {
+                    html += createAIMessageElement(msg.text, msg.verified || true, msg.isTyping || false, mId);
+                }
+            });
+            if (state.loading) {
+                html += `
+                    <div class="flex items-center gap-4 text-blue-500 font-bold text-xl mb-10 px-4">
+                        <i data-lucide="refresh-cw" class="animate-spin"></i> <span id="dynamic-loading-text" class="loading-fade">جاري استنباط الرد من المراجع...</span>
+                    </div>
+                `;
+                setTimeout(startDynamicLoadingMessages, 50);
+            } else {
+                stopDynamicLoadingMessages();
+            }
+            html += '<div id="messages-end"></div></div>';
+            container.innerHTML = html;
+            if (window.lucide) lucide.createIcons();
+            scrollToBottom(true);
+        }
+
+        window.copyMessage = function(mId) {
+            const m = state.messages.find(x => x.id === mId);
+            if (m) copyToClipboard(m.text);
+        };
+
+        window.speakFatwaText = function(mId) {
+            const m = state.messages.find(x => x.id === mId);
+            if (!m) return;
+            if ('speechSynthesis' in window) {
+                const u = new SpeechSynthesisUtterance(m.text);
+                u.lang = 'ar-SA';
+                window.speechSynthesis.speak(u);
+                showNotification("🔊 جاري النطق...");
+            } else {
+                showNotification("المتصفح لا يدعم النطق", "error");
+            }
+        };
+
+        window.shareFatwaWithRequiredText = function(mId) {
+            const m = state.messages.find(x => x.id === mId);
+            if (!m) return;
+            const fullText = `تم الرد على هذه الفتوى بواسطة نموذج مسلم\nرابط الموقع:\nhttps://thekillersalafi.web.app\n\n${m.text}`;
+            if (navigator.share) {
+                navigator.share({ title: 'فتوى شرعية', text: fullText, url: 'https://thekillersalafi.web.app' }).catch(()=>{});
+            } else {
+                copyToClipboard(fullText);
+                showNotification("تم النسخ للمشاركة ✅");
+            }
+        };
+
+        // ==================== نظام التقييم الحقيقي ====================
+        let activeRatingMessageId = null;
+        window.openRatingModal = function(mId) {
+            activeRatingMessageId = mId;
+            const modal = document.getElementById('ratingModal');
+            if (modal) {
+                modal.classList.add('active');
+                fetchRatingStats(mId);
+            }
+        };
+
+        window.closeRatingModal = function() {
+            const modal = document.getElementById('ratingModal');
+            if (modal) modal.classList.remove('active');
+        };
+
+        window.submitRating = async function(stars) {
+            if (!activeRatingMessageId) return;
+            try {
+                const ratingRef = db.ref(`fatwas_ratings/${activeRatingMessageId}`);
+                await ratingRef.push({ stars: stars, timestamp: Date.now() });
+                showNotification(`⭐ تم تسجيل تقييمك (${stars} نجوم) بنجاح!`);
+                closeRatingModal();
+                fetchRatingStats(activeRatingMessageId);
+            } catch (e) {
+                showNotification("حدث خطأ أثناء حفظ التقييم", "error");
+            }
+        };
+
+        function fetchRatingStats(mId) {
+            db.ref(`fatwas_ratings/${mId}`).once('value', snapshot => {
+                let totalStars = 0;
+                let count = 0;
+                snapshot.forEach(child => {
+                    totalStars += child.val().stars || 0;
+                    count++;
+                });
+                const avg = count > 0 ? (totalStars / count).toFixed(1) : "0.0";
+                const avgEl = document.getElementById('rating-average');
+                const countEl = document.getElementById('rating-count');
+                if (avgEl) avgEl.textContent = `التقييم: ${avg} / 5`;
+                if (countEl) countEl.textContent = `(${count} تقييمات)`;
+            });
+        }
+
+        // ==================== نظام البحث الذكي و تحميل القواعد المكتملة فقط ====================
+        async function loadAllFatwasForSearch() {
+            try {
+                const snapshot = await db.ref('fatwas_json').once('value');
+                cachedFatwasMemory = [];
+                snapshot.forEach(child => {
+                    const val = child.val();
+                    // تصفية الفتاوى بحيث تظهر فقط التي تم الرد عليها ولها إجابة فعلية
+                    const hasAnswer = val.answer && val.answer.trim().length > 0;
+                    if (hasAnswer) {
+                        cachedFatwasMemory.push({
+                            id: child.key,
+                            question: val.question || '',
+                            title: val.title || val.question || '',
+                            answer: val.answer || '',
+                            category: val.category || 'عام'
+                        });
+                    }
+                });
+                const countEl = document.getElementById('total-fatwas-count');
+                if (countEl) countEl.textContent = cachedFatwasMemory.length;
+                renderSearchResults(cachedFatwasMemory.slice(-10).reverse());
+            } catch (e) {
+                console.error("خطأ تحميل الفتاوى:", e);
+            }
+        }
+
+      
+     
+        // ==================== Gemini API مع التناوب ومعالجة الأخطاء الذكية والتحديث في Firebase ====================
+        async function callGeminiAPI(userQuestion) {
+            if (!dynamicApiKeys || dynamicApiKeys.length === 0) {
+                return "عذراً، لا توجد مفاتيح API مفعلة حالياً في قاعدة البيانات لإتمام الرد.";
+            }
+
+            let attempts = 0;
+            const maxAttempts = dynamicApiKeys.length;
+
+            while (attempts < maxAttempts) {
+                const currentObj = dynamicApiKeys[currentKeyIndex];
+                const apiKey = currentObj.key;
+                const fbId = currentObj.firebaseId;
+
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
+                const fullPrompt = `${SYSTEM_STRICT_INSTRUCTION}\n\nالمسألة الفقهية المستفتى عنها هي: ${userQuestion}`;
+
+                try {
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: fullPrompt }] }],
+                            generationConfig: { temperature: 0.3, maxOutputTokens: 8192 }
+                        })
+                    });
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        const answer = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                        if (answer) {
+                            // نجح المفتاح: تحديث الحالة في Firebase وزيادة requestsCount
+                            const newCount = (currentObj.requestsCount || 0) + 1;
+                            db.ref(`api_keys/${fbId}`).update({
+                                status: 'working',
+                                lastUsed: new Date().toISOString(),
+                                requestsCount: newCount,
+                                lastError: null
+                            });
+                            // الانتقال للمفتاح التالي في الدورة القادمة (Round Robin)
+                            currentKeyIndex = (currentKeyIndex + 1) % dynamicApiKeys.length;
+                            return answer;
+                        }
+                    }
+
+                    // في حال فشل الاستجابة أو وجود خطأ HTTP
+                    const statusErr = res.status;
+                    let errorType = 'invalid';
+                    if (statusErr === 429) errorType = 'limit';
+                    else if (statusErr === 401 || statusErr === 403) errorType = 'unauthorized';
+
+                    db.ref(`api_keys/${fbId}`).update({
+                        status: errorType,
+                        lastError: `HTTP Error: ${statusErr}`,
+                        lastUsed: new Date().toISOString()
+                    });
+
+                } catch (err) {
+                    db.ref(`api_keys/${fbId}`).update({
+                        status: 'invalid',
+                        lastError: err.message || 'Network Exception',
+                        lastUsed: new Date().toISOString()
+                    });
+                }
+
+                // الانتقال التلقائي للمفتاح التالي دون إزعاج المستخدم
+                currentKeyIndex = (currentKeyIndex + 1) % dynamicApiKeys.length;
+                attempts++;
+            }
+
+            return null;
+        }
+
+        async function saveFatwaAsJsonToDatabase(question, answerText) {
+            try {
+                const id = Date.now().toString();
+                await db.ref(`fatwas_json/${id}`).set({
+                    id: id,
+                    question: question,
+                    answer: answerText,
+                    createdAt: new Date().toISOString(),
+                    source: "model_muslim"
+                });
+            } catch (e) {}
+        }
+
+        // ==================== دورة السؤال والعرض الفوري ====================
+        async function handleAsk() {
+            if (!state.input.trim() || state.loading) return;
+            const userText = state.input;
+            state.input = "";
+            
+            const textarea = document.getElementById('message-input');
+            if (textarea) {
+                textarea.value = "";
+                textarea.style.height = 'auto';
+            }
+            
+            state.loading = true;
+            state.isHeroProminent = false;
+            state.autoScrollEnabled = true;
+
+            const uMsgId = Date.now().toString();
+            state.messages.push({ role: 'user', text: userText, id: uMsgId });
+            renderMessages();
+
+            let finalAnswer = null;
+            if (cachedFatwasMemory.length > 0) {
+                const fuse = new Fuse(cachedFatwasMemory, { keys: ['question'], threshold: 0.15 });
+                const res = fuse.search(userText);
+                if (res.length > 0) finalAnswer = res[0].item.answer;
+            }
+
+            if (!finalAnswer) {
+                finalAnswer = await callGeminiAPI(userText);
+            }
+
+            if (!finalAnswer) {
+                finalAnswer = "عذراً، حدث خطأ في الاتصال أو أن جميع المفاتيح استنفدت الحد المسموح. يرجى مراجعة لوحة تحكم المفاتيح.";
+            }
+
+            const aiMsgId = (Date.now() + 1).toString();
+            state.messages.push({ role: 'ai', text: '', verified: true, isTyping: true, id: aiMsgId });
+            state.loading = false;
+            renderMessages();
+
+            startTypewriter(finalAnswer, aiMsgId);
+
+            setTimeout(async () => {
+                saveFatwaAsJsonToDatabase(userText, finalAnswer);
+                notifyNewQuestion(userText, aiMsgId);
+                loadAllFatwasForSearch();
+            }, 100);
+        }
+
+        // ==================== معالجة أخطاء زر التسجيل الصوتي (الميكروفون) ====================
+        function setupSpeechRecognition() {
+            const micBtn = document.getElementById('mic-button');
+            if (!micBtn) return;
+
+            micBtn.addEventListener('click', () => {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SpeechRecognition) {
+                    showNotification("متصفحك لا يدعم خاصية التعرف على الصوت (Speech Recognition)", "error");
+                    return;
+                }
+
+                try {
+                    const recognition = new SpeechRecognition();
+                    recognition.lang = 'ar-SA';
+                    recognition.interimResults = false;
+                    recognition.maxAlternatives = 1;
+
+                    recognition.onstart = () => {
+                        showNotification("🎙️ جاري الاستماع, تحدث الآن...");
+                    };
+
+                    recognition.onresult = (event) => {
+                        const speechText = event.results[0][0].transcript;
+                        const ta = document.getElementById('message-input');
+                        if (ta) {
+                            ta.value = speechText;
+                            state.input = speechText;
+                            ta.style.height = 'auto';
+                            ta.style.height = ta.scrollHeight + 'px';
+                        }
+                    };
+
+                    recognition.onerror = (event) => {
+                        let errorMsg = "حدث خطأ أثناء التقاط الصوت";
+                        if (event.error === 'not-allowed') {
+                            errorMsg = "تم رفض إذن الوصول إلى الميكروفون من قبل المتصفح.";
+                        } else if (event.error === 'no-speech') {
+                            errorMsg = "لم يتم رصد أي صوت، يرجى المحاولة مرة أخرى.";
+                        } else if (event.error === 'network') {
+                            errorMsg = "خطأ في الشبكة أثناء الاتصال بخدمة الصوت.";
+                        }
+                        showNotification(errorMsg, "error");
+                    };
+
+                    recognition.start();
+                } catch (err) {
+                    showNotification("تعذر تشغيل الميكروفون: تأكد من إعطاء الصلاحية للمتصفح.", "error");
+                }
+            });
+        }
+
+        // ==================== Event Listeners & UI Setup ====================
+        function setupEventListeners() {
+            const ta = document.getElementById('message-input');
+            if (ta) {
+                ta.addEventListener('input', (e) => {
+                    state.input = e.target.value;
+                    e.target.style.height = 'auto';
+                    e.target.style.height = e.target.scrollHeight + 'px';
+                });
+                ta.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleAsk();
+                    }
+                });
+            }
+            const sendBtn = document.getElementById('send-button');
+            if (sendBtn) sendBtn.addEventListener('click', handleAsk);
+
+            const menuBtn = document.getElementById('menu-button');
+            if (menuBtn) menuBtn.addEventListener('click', () => {
+                state.isMenuOpen = !state.isMenuOpen;
+                const menu = document.getElementById('dropdown-menu');
+                if (menu) {
+                    menu.classList.toggle('menu-hidden', !state.isMenuOpen);
+                    menu.classList.toggle('menu-visible', state.isMenuOpen);
+                }
+            });
+
+            setupScrollHandling();
+            setupSpeechRecognition();
+            loadAllFatwasForSearch();
+        }
+
+        function renderApp() {
+            const root = document.getElementById('root');
+            if (!root) return;
+            root.innerHTML = `
+                <div class="h-screen flex flex-col relative transition-colors duration-500 dark">
+                    <div id="hero-container" class="hero-bg px-4 flex flex-col items-center justify-center">
+                        <i data-lucide="terminal" class="w-[150px] h-[150px] mx-auto mb-6 text-white"></i>
+                        <h1 class="text-4xl md:text-6xl font-black mb-4 text-white">مرحباً بك في <span class="text-white">{ نموذج مسلم }</span></h1>
+                        <p class="text-lg font-bold tracking-[0.2em] uppercase text-white">يتم الإجابة من المصادر السلفية الموثوقة</p>
+                    </div>
+
+                    <div class="fixed top-0 w-full z-50 px-4 md:px-20">
+                        <header class="fixed top-0 left-0 w-full z-50 px-8 py-4 flex justify-between items-center h-24 bg-[#1e1f20]/90 backdrop-blur-2xl border-b border-white/5 rounded-b-[32px]">
+                            <div class="flex-1 flex justify-start">
+                                <div class="relative">
+                                    <button id="menu-button" class="p-3 rounded-2xl">
+                                        <div class="flex flex-col gap-1 w-7">
+                                            <span class="h-1.5 w-full bg-[#FFFFFF] rounded-full block"></span>
+                                            <span class="h-1.5 w-full bg-[#FFFFFF] rounded-full block"></span>
+                                            <span class="h-1.5 w-full bg-[#FFFFFF] rounded-full block"></span>
+                                        </div>
+                                    </button>
+                                    <div id="dropdown-menu" class="absolute right-0 mt-4 w-80 bg-slate-900/98 border border-slate-800 rounded-[24px] shadow-2xl py-4 z-[100] menu-transition menu-hidden">
+                                        <button onclick="window.location.href='database.html'" class="w-full text-right px-6 py-4 hover:bg-white/5 flex items-center justify-between text-slate-200 group transition-all">
+                                            <span class="font-bold"> البحث في قواعد البيانات</span>
+                                            <i data-lucide="search" class="w-5 h-5 text-blue-400"></i>
+                                        </button>
+                                        <div class="h-[1px] bg-slate-800 my-2 mx-6"></div>
+                                        <button id="clear-history-btn" onclick="clearHistory()" class="w-full text-right px-6 py-4 hover:bg-white/5 flex items-center justify-between text-slate-200 group transition-all">
+                                            <span class="font-bold">️
+                                            مسح المحادثات</span>
+                                            <i data-lucide="trash-2" class="w-5 h-5 text-red-500"></i>
+                                        </button>
+                                        <div class="h-[1px] bg-slate-800 my-2 mx-6"></div>
+                                        <button onclick="window.openReportModal()" class="w-full text-right px-6 py-4 hover:bg-red-500/10 flex items-center justify-between text-red-400 group transition-all">
+                                            <span class="font-bold">⚠️ الإبلاغ عن مشكلة</span>
+                                            <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-1 flex justify-center">
+                                <h1 class="header-glow-text text-2xl md:text-5xl tracking-tighter uppercase">مسلم</h1>
+                            </div>
+                            <div class="flex-1 flex justify-end">
+                                <div class="text-white"><i data-lucide="terminal" class="w-10 h-10" style="stroke-width: 3px;"></i></div>
+                            </div>
+                        </header>
+                    </div>
+
+                    <main class="flex-1 overflow-y-auto pt-32 pb-48 custom-scroll px-0 messages-container">
+                        <div id="messages-container" class="w-full"></div>
+                    </main>
+
+                    <footer class="fixed bottom-0 left-0 w-full px-0 pb-8 pt-10 z-50 bg-gradient-to-t from-gray-900 via-gray-800/90 to-transparent">
+                        <div class="w-full max-w-full mx-auto relative px-4">
+                            <div class="relative flex flex-col bg-[#1e1f20] border border-white/5 rounded-[28px] p-2 transition-all">
+                                <textarea id="message-input" rows="1" placeholder="أدخل سؤالك هنا..." class="w-full bg-transparent border-none outline-none text-white placeholder-slate-500 p-4 pb-12 resize-none text-lg min-h-[60px] max-h-[200px] custom-scroll"></textarea>
+                                <div class="absolute bottom-3 left-4 right-4 flex justify-between items-center">
+                                    <button id="mic-button" class="p-2 rounded-full text-slate-400 hover:text-blue-400 transition-all"><i data-lucide="mic" class="w-5 h-5"></i></button>
+                                    <button id="send-button" class="p-2.5 rounded-full transition-all bg-white text-black scale-105 hover:bg-blue-400"><i data-lucide="arrow-up" class="w-5 h-5 stroke-[3px]"></i></button>
+                                </div>
+                            </div>
+                            <p class="text-[10px] text-center text-slate-600 mt-4 tracking-tight">قد يعرض نموذج مسلم أخطاء يرجى الانتظار حتى المراجعة العلمية</p>
+                        </div>
+                    </footer>
+                </div>
+            `;
+            if (window.lucide) lucide.createIcons();
+            loadMessagesFromLocal();
+            setupEventListeners();
+            renderHero();
+        }
+
+        renderApp();
+    </script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(reg => console.log('ServiceWorker registered: ', reg.scope))
+                    .catch(err => console.log('ServiceWorker registration failed: ', err));
+            });
+        }
+    </script>
+</body>
+
+</html>

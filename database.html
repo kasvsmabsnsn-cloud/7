@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>قاعدة بيانات الفتاوى - نموذج مسلم</title>
+    <!-- خط تجوال من Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- مكتبة البحث اللحظي Fuse.js -->
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
+    <!-- أيقونات Lucide -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Firebase SDK (v8) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+
+        /* شريط التمرير المخصص */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 10px;
+        }
+
+        /* شريط الألوان المتحرك أعلى البطاقات */
+        .color-bar {
+            height: 5px;
+            width: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899, #3b82f6);
+            background-size: 300% 100%;
+            animation: colorMove 4s linear infinite;
+        }
+        @keyframes colorMove {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 300% 0%; }
+        }
+
+        /* تأثير Glassmorphism للرأس العلوي */
+        .glass-header {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* تنسيق بطاقات الفتاوى لمنع التراكب وضمان مرونتها */
+        .fatwa-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 24px;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .fatwa-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+        }
+
+        /* شاشة التحميل الافتراضية */
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            background: #0f172a;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- شاشة التحميل الجميلة -->
+    <div id="loading-screen">
+        <div class="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+        <p class="text-slate-300 font-bold text-lg animate-pulse">جاري تحميل قواعد الفتاوى المعتمدة...</p>
+    </div>
+
+    <!-- الرأس العلوي الثابت (Header) بتصميم Glassmorphism -->
+    <header class="glass-header fixed top-0 left-0 right-0 z-50 px-4 py-4 md:px-8">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            
+            <!-- أزرار التنقل السريعة والرجوع -->
+            <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
+                <a href="index.html" class="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-200 px-4 py-2.5 rounded-2xl border border-white/5 transition-all text-sm font-bold">
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i> الرئيسية
+                </a>
+                <button onclick="refreshData()" class="flex items-center gap-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 px-4 py-2.5 rounded-2xl border border-blue-500/20 transition-all text-sm font-bold">
+                    <i data-lucide="rotate-cw" class="w-4 h-4"></i> تحديث
+                </button>
+            </div>
+
+            <!-- المنتصف: العنوان والشارة -->
+            <div class="flex items-center gap-3">
+                <h1 class="text-2xl md:text-3xl font-black text-white tracking-tight">مسلم</h1>
+                <span class="bg-blue-500/15 text-blue-400 border border-blue-500/20 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5">
+                    <i data-lucide="book-open" class="w-3.5 h-3.5"></i> قاعدة الفتاوى المعتمدة
+                </span>
+            </div>
+
+            <!-- صندوق البحث والعداد -->
+            <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+                <div class="relative w-full md:w-72">
+                    <input type="text" id="search-input" placeholder="ابحث عن فتوى..." class="w-full bg-slate-900/80 border border-white/10 rounded-2xl px-4 py-2.5 pr-11 text-white placeholder-slate-400 text-sm outline-none focus:border-blue-500 transition-all">
+                    <i data-lucide="search" class="absolute right-3.5 top-3 w-4 h-4 text-slate-400"></i>
+                </div>
+                <div class="bg-slate-900/80 border border-white/10 px-4 py-2.5 rounded-2xl text-xs font-bold text-slate-300 whitespace-nowrap">
+                    الإجمالي: <span id="total-count" class="text-blue-400 text-sm font-black">0</span>
+                </div>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- المحتوى الرئيسي (شبكة البطاقات) -->
+    <main class="flex-1 max-w-7xl mx-auto w-full px-4 pt-36 pb-16">
+        <div id="fatwas-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- سيتم حقن البطاقات ديناميكياً هنا -->
+        </div>
+
+        <!-- حالة عدم وجود نتائج -->
+        <div id="no-results" class="hidden flex flex-col items-center justify-center py-20 text-center">
+            <i data-lucide="search-x" class="w-16 h-16 text-slate-600 mb-4"></i>
+            <h3 class="text-xl font-bold text-slate-300 mb-2">لا توجد فتاوى مطابقة</h3>
+            <p class="text-sm text-slate-500">جرب البحث بكلمات مفتاحية أخرى.</p>
+        </div>
+    </main>
+
+    <!-- الفوتر البسيط -->
+    <footer class="py-6 text-center text-xs text-slate-500 border-t border-white/5">
+        جميع الحقوق محفوظة © نموذج مسلم - فتاوى شرعية موثوقة
+    </footer>
+
+    <!-- منطق الـ JavaScript الكامل -->
+    <script>
+        // إعدادات Firebase الخاصة بالمشروع
+        const firebaseConfig = {
+            apiKey: "AIzaSyC4n627jxgPjoQn7icO9OP9C3ImcAbLEME",
+            authDomain: "private-d338e.firebaseapp.com",
+            databaseURL: "https://private-d338e-default-rtdb.firebaseio.com",
+            projectId: "private-d338e",
+            storageBucket: "private-d338e.firebasestorage.app",
+            messagingSenderId: "514393440915",
+            appId: "1:514393440915:web:b72e886e866f45ab948366",
+            measurementId: "G-Z8RT3VY8SL"
+        };
+
+        if (!firebase.apps || !firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
+
+        let allFatwas = [];
+        let fuseInstance = null;
+
+        // دالة مساعدة لتنظيف النصوص وهروب الـ HTML
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // إشعار منبثق عند النسخ أو المشاركة
+      // دالة الإشعارات المنبثقة المحسنة (ثابتة في المنتصف، زوايا دائرية كبيرة، وبدون تنطيط)
+function showNotification(message) {
+    // التحقق من عدم وجود إشعار قديم لكي لا تتداخل الإشعارات
+    const existingNotif = document.getElementById('custom-toast-notification');
+    if (existingNotif) {
+        existingNotif.remove();
+    }
+
+    const notif = document.createElement('div');
+    notif.id = 'custom-toast-notification';
+    
+    // تنسيقات CSS المباشرة للإشعار: ثابت في الأسفل والمنتصف، زوايا منحنية، Glassmorphism
+    notif.style.cssText = `
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background: rgba(30, 41, 59, 0.95);
+        color: #f8fafc;
+        padding: 14px 28px;
+        border-radius: 9999px;
+        font-family: 'Tajawal', sans-serif;
+        font-weight: 700;
+        font-size: 0.9rem;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        z-index: 99999;
+        opacity: 0;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        text-align: center;
+        white-space: nowrap;
+    `;
+    
+    notif.textContent = message;
+    document.body.appendChild(notif);
+
+    // تفعيل تأثير الظهور الانسيابي
+    setTimeout(() => {
+        notif.style.opacity = '1';
+        notif.style.transform = 'translateX(-50%) translateY(0)';
+    }, 10);
+
+    // إخفاء وإزالة الإشعار بعد 2.5 ثانية بسلاسة
+    setTimeout(() => {
+        notif.style.opacity = '0';
+        notif.style.transform = 'translateX(-50%) translateY(20px)';
+        setTimeout(() => notif.remove(), 300);
+    }, 2500);
+}
+
+// جلب الفتاوى من Firebase وتخزينها مؤقتاً مع فلترة الفتاوى التي تم الرد عليها فقط
+// تعديل دالة جلب الفتاوى لتجنب إظهار رسائل الخطأ غير المرغوب فيها
+async function fetchFatwas() {
+    try {
+        const snapshot = await db.ref('fatwas_json').once('value');
+        allFatwas = [];
+        
+        snapshot.forEach(child => {
+            const val = child.val();
+            const answerText = val.answer ? val.answer.trim() : '';
+            
+            // التحقق من أن النص عبارة عن فتوى حقيقية وليست رسالة خطأ نظام
+            const isValidFatwa = answerText.length > 0 && 
+                                 !answerText.includes('خطأ في الاتصال') && 
+                                 !answerText.includes('لا توجد مفاتيح') && 
+                                 !answerText.includes('عذراً، حدث خطأ');
+            
+            if (isValidFatwa) {
+                allFatwas.push({
+                    id: child.key,
+                    question: val.question || 'بدون سؤال',
+                    answer: val.answer,
+                    category: val.category || 'عام',
+                    createdAt: val.createdAt || ''
+                });
+            }
+        });
+
+        // ترتيب تنازلي حسب الأحدث
+        allFatwas.reverse();
+
+        // تهيئة محرك البحث السريع Fuse.js
+        fuseInstance = new Fuse(allFatwas, {
+            keys: ['question', 'answer', 'category'],
+            threshold: 0.35
+        });
+
+        renderFatwas(allFatwas);
+        document.getElementById('total-count').textContent = String(allFatwas.length).padStart(4, '0');
+        
+        // إخفاء شاشة التحميل بسلاسة
+        const loadingScreen = document.getElementById('loading-screen');
+        if (loadingScreen) {
+            loadingScreen.style.opacity = '0';
+            setTimeout(() => loadingScreen.remove(), 500);
+        }
+    } catch (error) {
+        console.error("خطأ في جلب البيانات:", error);
+        // في حال حدوث خطأ، نقوم بإخفاء شاشة التحميل وإظهار قائمة فارغة نظيفة بدلاً من تخريب الواجهة
+        const loadingScreen = document.getElementById('loading-screen');
+        if (loadingScreen) loadingScreen.remove();
+        renderFatwas([]); // عرض واجهة "لا توجد فتاوى مطابقة" بشكل أنيق
+    }
+}
+
+
+
+        // رسم البطاقات على الشاشة
+        function renderFatwas(list) {
+            const grid = document.getElementById('fatwas-grid');
+            const noResults = document.getElementById('no-results');
+
+            if (list.length === 0) {
+                grid.innerHTML = '';
+                noResults.classList.remove('hidden');
+                return;
+            }
+
+            noResults.classList.add('hidden');
+
+            grid.innerHTML = list.map(item => {
+                const cleanQuestion = escapeHtml(item.question);
+                const cleanAnswer = escapeHtml(item.answer);
+                const shortAnswer = cleanAnswer.length > 120 ? cleanAnswer.substring(0, 120) + '...' : cleanAnswer;
+
+                return `
+                    <div class="fatwa-card">
+                        <div class="color-bar"></div>
+                        <div class="p-6 flex flex-col flex-1">
+                            <!-- التصنيف والتاريخ -->
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full text-xs font-bold border border-blue-500/10">
+                                    ${escapeHtml(item.category)}
+                                </span>
+                            </div>
+
+                            <!-- السؤال -->
+                            <h3 class="text-lg font-black text-white mb-2 leading-snug">
+                                📌 ${cleanQuestion}
+                            </h3>
+
+                            <!-- معاينة الإجابة -->
+                            <p class="text-slate-400 text-sm leading-relaxed mb-6 flex-1">
+                                ${shortAnswer}
+                            </p>
+
+                            <!-- الأزرار السفلية -->
+                            <div class="flex items-center gap-2 pt-4 border-t border-white/5 mt-auto">
+                                <a href="fatwa.html?id=${item.id}" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-3 rounded-xl font-bold text-xs text-center transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-blue-600/20">
+                                    عرض الفتوى كاملة <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                                </a>
+                                <button onclick="copyFatwa('${item.id}', \`${cleanQuestion}\`, \`${cleanAnswer}\`)" class="p-2.5 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl transition-all border border-white/5" title="نسخ الفتوى">
+                                    <i data-lucide="copy" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="shareFatwa('${item.id}', \`${cleanQuestion}\`)" class="p-2.5 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl transition-all border border-white/5" title="مشاركة الفتوى">
+                                    <i data-lucide="share-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // تفعيل الأيقونات الجديدة
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // وظيفة النسخ
+        function copyFatwa(id, question, answer) {
+            const textToCopy = `📌 السؤال: ${question}\n\n📖 الإجابة:\n${answer}\n\nرابط الفتوى:\nhttps://thekillersalafi.web.app/fatwa.html?id=${id}`;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                showNotification("✅ تم نسخ الفتوى بنجاح!");
+            });
+        }
+
+        // وظيفة المشاركة
+        function shareFatwa(id, question) {
+            const shareUrl = `https://thekillersalafi.web.app/fatwa.html?id=${id}`;
+            if (navigator.share) {
+                navigator.share({
+                    title: 'فتوى شرعية - نموذج مسلم',
+                    text: question,
+                    url: shareUrl
+                }).catch(() => {});
+            } else {
+                navigator.clipboard.writeText(shareUrl);
+                showNotification("🔗 تم نسخ رابط الفتوى للمشاركة!");
+            }
+        }
+
+        // زر تحديث البيانات
+        function refreshData() {
+            const loadingScreen = document.createElement('div');
+            loadingScreen.id = 'loading-screen';
+            loadingScreen.innerHTML = `
+                <div class="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+                <p class="text-slate-300 font-bold text-lg animate-pulse">جاري تحديث البيانات...</p>
+            `;
+            document.body.appendChild(loadingScreen);
+            fetchFatwas();
+        }
+
+        // البحث اللحظي أثناء الكتابة
+        const searchInput = document.getElementById('search-input');
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            if (!query) {
+                renderFatwas(allFatwas);
+                return;
+            }
+            if (fuseInstance) {
+                const results = fuseInstance.search(query).map(r => r.item);
+                renderFatwas(results);
+            }
+        });
+
+        // تشغيل الجلب عند التحميل الأولي
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchFatwas();
+        });
+    </script>
+</body>
+</html>
